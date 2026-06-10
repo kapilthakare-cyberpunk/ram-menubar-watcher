@@ -9,7 +9,22 @@ Dropdown: used/total GB, swap, top N processes by RSS.
 
 import rumps
 import psutil
+import socket
+import sys
+import os
 from AppKit import NSStatusBar, NSVariableStatusItemLength
+
+# ── Single-instance lock ──────────────────────────────────────────────────────
+# Bind a Unix-domain socket to a fixed path. If another instance is already
+# holding the socket, we exit immediately — preventing two NSStatusItems from
+# fighting over the same menu-bar slot.
+_LOCK_SOCK = socket.socket(socket.AF_UNIX, socket.SOCK_DGRAM)
+_LOCK_PATH = "/tmp/com.pnz.ram-menubar.lock"
+try:
+    _LOCK_SOCK.bind(_LOCK_PATH)
+except OSError:
+    sys.exit(0)  # Another instance is already running — silently exit
+# ─────────────────────────────────────────────────────────────────────────────
 
 # ── Config ────────────────────────────────────────────────────────────────────
 INTERVAL       = 5    # seconds between refreshes
