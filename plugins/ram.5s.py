@@ -97,7 +97,7 @@ def main():
             clean_name = name.replace('|', ' ').replace('"', '').replace("'", "").strip()
             display_name = clean_name[:20]
             # Print with monospaced font alignment and confirmation action
-            print(f"  {display_name:<20} {mb:>6.0f} MB | font=SFMono-Regular size=12 bash={script_path} args='kill {pid} \"{clean_name}\"' terminal=false refresh=true")
+            print(f"  {display_name:<20} {mb:>6.0f} MB | font=SFMono-Regular size=12 bash={script_path} param0=kill param1={pid} param2='{clean_name}' terminal=false refresh=true")
 
         for _ in range(len(top), TOP_N):
             print("  – | font=SFMono-Regular size=12")
@@ -108,6 +108,8 @@ def main():
         print(f"Error: {e}")
 
 if __name__ == "__main__":
+    with open("/tmp/ram_menubar_kill.log", "a") as f:
+        f.write(f"ARGS: {sys.argv}\n")
     if len(sys.argv) > 1 and sys.argv[1] == "kill":
         confirm_and_kill(int(sys.argv[2]), sys.argv[3])
     else:
