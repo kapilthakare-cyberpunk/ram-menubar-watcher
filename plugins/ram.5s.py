@@ -28,14 +28,17 @@ def main():
         used = vm.used / (1024 ** 3)
         total = vm.total / (1024 ** 3)
 
-        # Set title color based on threshold
+        # Set title color based on threshold (using high-contrast system colors for Light and Dark modes)
+        prefix = ""
         color_opt = ""
         if pct >= CRIT_THRESHOLD:
-            color_opt = " | color=red"
+            prefix = "🔴 "
+            color_opt = " | color=#FF3B30,#FF453A"
         elif pct >= WARN_THRESHOLD:
-            color_opt = " | color=orange"
+            prefix = "⚠️ "
+            color_opt = " | color=#FF9500,#FF9F0A"
 
-        print(f"RAM {pct:.0f}%{color_opt}")
+        print(f"{prefix}RAM {pct:.0f}%{color_opt}")
         print("---")
         print(f"RAM: {used:.1f} GB / {total:.0f} GB ({pct:.0f}%) | font=SFMono-Regular size=12")
         
