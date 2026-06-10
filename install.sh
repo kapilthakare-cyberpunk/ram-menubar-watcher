@@ -74,8 +74,6 @@ cat > "$PLIST_PATH" <<PLIST
     <key>PYTHONPATH</key>
     <string>${VENV_SITE}</string>
   </dict>
-  <key>StartInterval</key>
-  <integer>8</integer>
   <key>StandardOutPath</key>
   <string>${LOG_OUT}</string>
   <key>StandardErrorPath</key>
