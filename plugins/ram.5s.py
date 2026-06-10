@@ -7,6 +7,8 @@
 
 import psutil
 import os
+import sys
+import subprocess
 
 # Configuration
 WARN_THRESHOLD = 60
@@ -18,6 +20,29 @@ IGNORE_NAMES = {
     "Dock", "Finder", "SystemUIServer", "com.apple.WebKit.WebContent",
     "com.apple.WebKit.Networking",
 }
+
+def confirm_and_kill(pid: int, name: str):
+    # AppleScript dialog prompt
+    script = f'''
+    display dialog "Are you sure you want to terminate {name} (PID: {pid})?" \
+    buttons {{"Cancel", "Terminate"}} \
+    default button "Terminate" \
+    with icon caution \
+    with title "Confirm Force Quit"
+    '''
+    try:
+        res = subprocess.run(["osascript", "-e", script], capture_output=True, text=True)
+        if res.returncode == 0:
+            try:
+                os.kill(pid, 9)
+            except PermissionError:
+                alert = f'display alert "Permission Denied" message "You do not have permission to terminate {name}." as warning'
+                subprocess.run(["osascript", "-e", alert])
+            except ProcessLookupError:
+                pass
+    except Exception as e:
+        alert = f'display alert "Error" message "{str(e)}" as warning'
+        subprocess.run(["osascript", "-e", alert])
 
 def main():
     try:
@@ -65,13 +90,14 @@ def main():
 
         top = sorted(all_procs, key=lambda x: x[1], reverse=True)[:TOP_N]
 
+        script_path = os.path.realpath(__file__)
         for name, rss, pid in top:
             mb = rss / (1024 ** 2)
-            # Remove any pipes in name so they don't interfere with SwiftBar parsing
-            clean_name = name.replace('|', ' ').strip()
+            # Remove pipes and quotes to ensure safe command parsing in SwiftBar
+            clean_name = name.replace('|', ' ').replace('"', '').replace("'", "").strip()
             display_name = clean_name[:20]
-            # Print with monospaced font alignment and click-to-kill action
-            print(f"  {display_name:<20} {mb:>6.0f} MB | font=SFMono-Regular size=12 bash=/bin/kill args='-9 {pid}' terminal=false refresh=true")
+            # Print with monospaced font alignment and confirmation action
+            print(f"  {display_name:<20} {mb:>6.0f} MB | font=SFMono-Regular size=12 bash={script_path} args='kill {pid} \"{clean_name}\"' terminal=false refresh=true")
 
         for _ in range(len(top), TOP_N):
             print("  – | font=SFMono-Regular size=12")
@@ -82,4 +108,7 @@ def main():
         print(f"Error: {e}")
 
 if __name__ == "__main__":
-    main()
+    if len(sys.argv) > 1 and sys.argv[1] == "kill":
+        confirm_and_kill(int(sys.argv[2]), sys.argv[3])
+    else:
+        main()
