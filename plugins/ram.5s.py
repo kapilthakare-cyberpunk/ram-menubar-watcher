@@ -1,6 +1,6 @@
 #!/Users/kapilthakare/scripts/ram-menubar/.venv/bin/python3
 # <bitbar.title>RAM Monitor</bitbar.title>
-# <bitbar.version>1.0</bitbar.version>
+# <bitbar.version>1.1</bitbar.version>
 # <bitbar.author>PNZ</bitbar.author>
 # <bitbar.author.github>kapilthakare</bitbar.author.github>
 # <bitbar.desc>Shows live RAM usage and top processes</bitbar.desc>
@@ -22,7 +22,6 @@ IGNORE_NAMES = {
 }
 
 def confirm_and_kill(pid: int, name: str):
-    # AppleScript dialog prompt
     script = f'''
     display dialog "Are you sure you want to terminate {name} (PID: {pid})?" \
     buttons {{"Cancel", "Terminate"}} \
@@ -44,6 +43,10 @@ def confirm_and_kill(pid: int, name: str):
         alert = f'display alert "Error" message "{str(e)}" as warning'
         subprocess.run(["osascript", "-e", alert])
 
+def ram_bar(pct: float, width: int = 12) -> str:
+    filled = int(pct / 100 * width)
+    return "█" * filled + "░" * (width - filled)
+
 def main():
     try:
         vm = psutil.virtual_memory()
@@ -53,7 +56,7 @@ def main():
         used = vm.used / (1024 ** 3)
         total = vm.total / (1024 ** 3)
 
-        # Set title color based on threshold (using high-contrast system colors for Light and Dark modes)
+        # Menu bar title — color-coded by severity
         prefix = ""
         color_opt = ""
         if pct >= CRIT_THRESHOLD:
@@ -62,20 +65,30 @@ def main():
         elif pct >= WARN_THRESHOLD:
             prefix = "⚠️ "
             color_opt = " | color=#FF9500,#FF9F0A"
+        else:
+            color_opt = " | color=#8E8E93,#98989D"
 
         print(f"{prefix}RAM {pct:.0f}%{color_opt}")
         print("---")
-        print(f"RAM: {used:.1f} GB / {total:.0f} GB ({pct:.0f}%) | font=SFMono-Regular size=12")
-        
+
+        # Header
+        print("RAM Usage | size=13 font=SF Pro Text color=#1C1C1E,#F5F5F7")
+        print(f"{used:.1f} GB / {total:.0f} GB ({pct:.0f}%) | size=12 font=SFMono-Regular color=#3C3C43,#EBEBF5")
+        print(f"{ram_bar(pct)} | size=11 font=SFMono-Regular color=#007AFF,#0A84FF")
+        print("---")
+
+        # Swap
         swap_used = swap.used / (1024 ** 3)
         swap_total = swap.total / (1024 ** 3) if swap.total else 0
+        print("Swap | size=13 font=SF Pro Text color=#1C1C1E,#F5F5F7")
         if swap.total:
-            print(f"Swap: {swap_used:.1f} GB / {swap_total:.0f} GB | font=SFMono-Regular size=12")
+            print(f"{swap_used:.1f} GB / {swap_total:.0f} GB ({swap.used/swap.total*100:.0f}%) | size=12 font=SFMono-Regular color=#3C3C43,#EBEBF5")
         else:
-            print("Swap: none | font=SFMono-Regular size=12")
-
+            print("None | size=12 font=SFMono-Regular color=#3C3C43,#EBEBF5")
         print("---")
-        print("Top Processes by RAM | font=SFMono-Regular size=12")
+
+        # Top Processes
+        print("Top Processes | size=13 font=SF Pro Text color=#1C1C1E,#F5F5F7")
 
         all_procs = []
         for p in psutil.process_iter(["name", "pid", "memory_info"]):
@@ -89,18 +102,23 @@ def main():
                 continue
 
         top = sorted(all_procs, key=lambda x: x[1], reverse=True)[:TOP_N]
-
         script_path = os.path.realpath(__file__)
-        for name, rss, pid in top:
+
+        for i, (name, rss, pid) in enumerate(top):
             mb = rss / (1024 ** 2)
-            # Remove pipes and quotes to ensure safe command parsing in SwiftBar
             clean_name = name.replace('|', ' ').replace('"', '').replace("'", "").strip()
-            display_name = clean_name[:20]
-            # Print with monospaced font alignment and confirmation action
-            print(f"  {display_name:<20} {mb:>6.0f} MB | font=SFMono-Regular size=12 bash={script_path} param0=kill param1={pid} param2='{clean_name}' terminal=false refresh=true")
+            display_name = clean_name[:22]
+            # Rank indicator
+            rank = f"{i+1}."
+            # Size relative to top process
+            size_color = "color=#3C3C43,#EBEBF5" if i > 0 else "color=#1C1C1E,#F5F5F7"
+            print(f"  {rank:>3} {display_name:<22} {mb:>6.0f} MB | size=12 font=SFMono-Regular {size_color} bash={script_path} param0=kill param1={pid} param2='{clean_name}' terminal=false refresh=true")
 
         for _ in range(len(top), TOP_N):
-            print("  – | font=SFMono-Regular size=12")
+            print("  — | size=12 font=SFMono-Regular color=#C7C7CC,#48484A")
+
+        print("---")
+        print("Quit | size=12 color=#FF3B30,#FF453A bash={script_path} param0=quit terminal=false".format(script_path=script_path))
 
     except Exception as e:
         print("RAM ?%")
@@ -112,5 +130,7 @@ if __name__ == "__main__":
         f.write(f"ARGS: {sys.argv}\n")
     if len(sys.argv) > 1 and sys.argv[1] == "kill":
         confirm_and_kill(int(sys.argv[2]), sys.argv[3])
+    elif len(sys.argv) > 1 and sys.argv[1] == "quit":
+        sys.exit(0)
     else:
         main()
