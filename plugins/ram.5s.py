@@ -118,6 +118,7 @@ def main():
             print("  — | size=12 font=SFMono-Regular color=#C7C7CC,#48484A")
 
         print("---")
+        print("Open RAM GUI | bash='python3' param1='/Users/kapilthakare/Projects/ram-watcher/ram-watcher-gui.py' terminal=false")
         print("Quit | size=12 color=#FF3B30,#FF453A bash={script_path} param0=quit terminal=false".format(script_path=script_path))
 
     except Exception as e:
