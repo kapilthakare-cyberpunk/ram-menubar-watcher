@@ -1,1 +1,0 @@
-/Users/kapilthakare/.gemini/antigravity/scratch/storage-watcher/storage-watcher.1m.sh
