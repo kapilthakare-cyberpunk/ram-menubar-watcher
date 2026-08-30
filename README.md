@@ -108,6 +108,5 @@ ram-menubar/
 │   └── ram.5s.py        # SwiftBar plugin script (uses psutil from .venv)
 ├── install.sh           # One-shot shell installer
 ├── uninstall.sh         # Teardown script for legacy configurations
-├── ram_menubar.py       # Legacy rumps script (preserved for reference)
 └── README.md            # This documentation
 ```
